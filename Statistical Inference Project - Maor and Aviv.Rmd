@@ -20,7 +20,7 @@ We used WHO table of Average BMI and life expectancy for 177 countries in the wo
 
 **We hypothesize** that BMI is an explanatory variable for a person's life expectancy. 
 
-##### 1 i) Handling an anomaly in the data
+##### 1 i) Handling an in the data
 We noticed there are observations between 0 and 10 (physically impossible BMI values). WE Removed the noise in the data. Observations where BMI is smaller then 10 are omitted.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE }
@@ -33,6 +33,14 @@ BMI <- df$BMI
 # na.omit(df)
 plot(main = "Clean Scatter Plot",BMI,Life.expectancy, col="blue")
 # abline(v=10, col="red") 
+
+# setBasic <- function (){
+#   setwd("C:/Users/avivg/OneDrive/Documents/R/Statistical Analysis Course/Lab")
+# df <- read.csv("WHO_BMI_2015.csv")
+# Life.expectancy <- df$Life.expectancy
+# BMI <- df$BMI
+# }
+# setBasic()
 ```
 
 
@@ -44,13 +52,98 @@ plot(main = "Clean Scatter Plot",BMI,Life.expectancy, col="blue")
 ```
 
 
-### 2) Discriptive Statistics
-#### Histograms:
+### 2) Inference Statistics
+#### Estemeting:
+
+
 ```{r}
-hist(BMI , main = "BMI", breaks=50, freq=FALSE, col="light blue")
-lines(density.default(BMI))
+#Q1
+# by MLE method:
+Y_mu_hat <- mean(Life.expectancy)
+Y_mu_hat
+
+Y_sig_square_hat <- var(Life.expectancy)
+Y_sig_square_hat
+sqrt(Y_sig_square_hat)
+
+
+#Hanfanim - moment method :
+Y_mu_hat_mom <- mean(Life.expectancy)
+Y_mu_hat_mom
+
+Ey_squre <- Y_mu_hat_mom^2
+y_squre <- mean(Life.expectancy^2)
+Y_sig_squre_hat_mom <- y_squre - Ey_squre
+Y_sig_squre_hat_mom
 ```
 
+```{r Q1 b}
+
+# install.packages(Hmisc)
+
+W<- BMI-min(BMI)
+W
+gamma.shape(W)
+a_hat_MLE <- gamma.dispersion(W)
+a_hat_MLE
+
+# Moment method 
+a_hat_moment <- (mean(BMI)^2)/((mean(BMI^2))-(mean(BMI)^2))
+a_hat_moment
+# mean(BMI)^2
+lambda_hat_moment <- (mean(BMI))/((mean(BMI^2))-(mean(BMI)^2))
+lambda_hat_moment
+quants <- c(10,50,75,90)
+quants_X <- qgamma(quants, shape = a_hat_moment, scale = lambda_hat_moment)
+qgamma(10, shape = a_hat_moment, rate = lambda_hat_moment)
+
+# Log-likelihood
+logLikelihood = function(par, data){
+  df <- function(f, low, up, par1, par2) {
+    f*log(pgamma(up, par1, par2) - pgamma(low, par1, par2))
+  }  
+  shape = exp(par[1])
+  rate = exp(par[2])  
+  -sum(df(dat$f, dat$L, dat$U, shape, rate))
+}
+
+# Fit
+res <- optim(par = c(3, -6), fn = logLikelihood, data = dat, control = list(reltol = 1e-15))
+
+
+# b_hat_moment <- 
+# BMI^2
+# (mean(BMI^2))
+# 28^2
+# MLE GAMMA
+# max(BMI)^2
+# mean.op <- mean(W)
+# sum.log <- sum(log(W))
+# n <- length(W)
+# 
+# dif.gam = function(alpha){sum.log + n*log(alpha/mean.op) - n*digamma(alpha)}
+# 
+# dif.gam(1)
+# dif.gam(1:5)
+# alp <- seq(4,5,0.01)
+# ell.alp <- dif.gam(alp)
+# plot(alp,ell.alp,type='l')
+# abline(h=0)
+# 
+# uniroot(dif.gam,c(4,5))
+# 
+# alpha.MLE <- uniroot(dif.gam,c(4,5))$root
+# lambda.MLE <- alpha.MLE/mean.op
+# 
+# hist(optime,breaks=15,freq=FALSE)
+# lines(x,dgamma(x,alpha.moment,lambda.moment),col='blue')
+# lines(x,dlnorm(x,mu,sigma),col='red')
+# x <- seq(0,10,0.1)
+# lines(x,dgamma(x,alpha.MLE,lambda.MLE),col='black')
+
+
+
+```
 A distribution with two centric values can be seen(23,27).no values under 20 or above 32. (that indicates precise data because beyond this range its means extreme underweight or extreme obesity) 
 
 ```{r}
