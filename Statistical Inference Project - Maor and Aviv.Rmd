@@ -1,0 +1,232 @@
+---
+title: "Linear Regression Statistical Analysis Project "
+author: "Aviv Gelfand and Maor Moshe  -  03/12/2022"
+output:
+  html_document: 
+    fig_height: 4
+    df_print: kable
+    fig_width: 6
+  word_document: default
+editor_options:
+  chunk_output_type: console
+---
+### 1) About the Data-Set
+We used WHO table of Average BMI and life expectancy for 177 countries in the world.
+[Source](https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who?resource=download).
+
+**Predicted / dependent variable Y**: Life expectancy - refers to average number of years a person can expect to live in a country.
+
+**Undependable variable X**: BMI - Body Mass Index units. A calculation using a person's height and weight. The formula is $BMI = \frac{kg}{h_m^2}$ where kg is a person's weight in kilograms and mh is their height in meters. A BMI of 25.0 or more is overweight, while the healthy range is 18.5 to 24.9.
+
+**We hypothesize** that BMI is an explanatory variable for a person's life expectancy. 
+
+##### 1 i) Handling an anomaly in the data
+We noticed there are observations between 0 and 10 (physically impossible BMI values). WE Removed the noise in the data. Observations where BMI is smaller then 10 are omitted.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE }
+# getwd()
+setwd("C:/Users/avivg/OneDrive/Documents/R/Statistical Analysis Course/Lab")
+df <- read.csv("WHO_BMI_2015.csv")
+Life.expectancy <- df$Life.expectancy
+BMI <- df$BMI
+# head(df)
+# na.omit(df)
+plot(main = "Clean Scatter Plot",BMI,Life.expectancy, col="blue")
+# abline(v=10, col="red") 
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#BMI1 <-  df$BMI >10
+#df2 <- df[df$BMI > 10,]
+#df <- df2
+#plot(df2$BMI, df2$Life.Expectancy.Years )
+```
+
+
+### 2) Discriptive Statistics
+#### Histograms:
+```{r}
+hist(BMI , main = "BMI", breaks=50, freq=FALSE, col="light blue")
+lines(density.default(BMI))
+```
+
+A distribution with two centric values can be seen(23,27).no values under 20 or above 32. (that indicates precise data because beyond this range its means extreme underweight or extreme obesity) 
+
+```{r}
+hist(Life.expectancy, main = "Life Expectancy", breaks=50, freq = FALSE, col="light blue")
+lines(density.default(Life.expectancy))
+```
+
+It can be seen that the life expectancy dis' has a long left tail and a center around `r round(mean(Life.expectancy))`, and the latest age is `r round(max(Life.expectancy))`
+
+You can see observations that represent an average life expectancy below the age of 55. We assume that these observations will correspond with people with a low BMI score - third world countries. We will confirm the test later in the work. 
+
+##### Mean, Median, SD, Min, Max,  and Quantiles:
+
+```{r}
+# tmp <- df[c('BMI','Life.Expectancy') ]
+# tmp
+(summary(Life.expectancy))
+summary(BMI)
+```
+$SD_x =$ `r round(sd(BMI), 2)`, and 
+$SD_y =$ `r round(sd(Life.expectancy), 2)`
+
+### 3) Our Linear Regression Model
+```{r}
+reg.bmi.le <- lm(Life.expectancy ~ BMI)
+plot(BMI,Life.expectancy, main = "Average BMI VS Average Life Expectency")
+abline(reg.bmi.le,lwd=2,col="green")
+```
+
+##### Linear Regression Coefficients
+
+```{r, echo=FALSE}
+# summary(df2)
+a_hat <- cov(Life.expectancy,BMI,  use = "pairwise.complete.obs")/var(BMI,na.rm = "True")
+# a_hat
+b_hat <- mean(Life.expectancy, na.rm = TRUE)-a_hat*mean(BMI, na.rm = TRUE)
+# b_hat
+y_hat <- a_hat*BMI + b_hat
+
+###optinal editing - The process of verifying the model, we compared the results of the prediction calculated manually to internal function of R.
+
+#plot(BMI,Life.expectancy, main = "y_hat and the oprator abline are the same line")
+#abline(reg.bmi.le,lwd=2,col="green")
+#lines(BMI, y_hat)
+#plot(lm(Life.expectancy ~ BMI))
+```
+
+\br
+ $\hat{a} =$ \  `r round(a_hat,3)` is the slope of the regression line. In how much will a person's life expectancy change if their BMI increases by one BMI score.  
+\n
+ $\hat{b} =$ \ `r round(b_hat,2)` is the intercept of the regression line. It is the size of the life expectency that does not depend on BMI. 
+Simply put: a person lives 17.19 years first of all, and then depending on his BMI he will live another $\hat{a}$BMI years.
+
+Pearson Correlation Coefficient: $r(X,Y):= \frac{cov(X,Y)}{SD_X SD_Y} =$ `r round(cor(BMI, Life.expectancy, use = "complete.obs"),3)`
+\n The correlation between the variables is positive and high.It suggests that the higher the BMI, the higher the life expectancy.
+
+\n R Square Indicator: $R^2:= r^2(X,Y)=$ `r round(cor(BMI, Life.expectancy, use = "complete.obs")^2,3)`
+
+Our average BMI based model explains `r round(cor(BMI, Life.expectancy, use = "complete.obs")^2,3)` of the variance of averagel life expectancy in a country.
+
+
+**Note**: The connection is not necessarily linear. Becuase in a linear model, as BMI increases, so does life expectancy. In practice, a BMI over 25 describes a situation of "dangerous obesity" and therefore shortens the lifestyle. A parabolic model may be appropriate.
+
+#### Evaluation - Root Mean Square Error (RMSE)
+We showed that  $R^2$  is lower than 0.5, a value that is considered low. However, it can be explained by countless other reasons throughout a person's life expectancy, so relatively it is a variable that explains a considerable percentage of variation
+
+```{r, echo=FALSE}
+## the first will be the correlation check
+# cor(df2$BMI, df2$Life.Expectancy.Years, use = "complete.obs")
+
+## now we will check what about R_squred
+#reg.bmi.le <- lm(Life.expectancy ~ BMI)
+#summary(reg.bmi.le)
+
+
+e<-reg.bmi.le$residuals
+RMSE<-round(sqrt(sum(e^2)/(length(BMI)-2)),2)
+#RMSE
+
+```
+
+```{r , echo=FALSE}
+##R_squred is 0.36, great! lets check it with pearson's number
+# security_check <- cor(df2$BMI, df2$Life.Expectancy.Years, use = "complete.obs")**2
+# security_check
+#The R squared score is 0.52, we will confirm the result by increasing the squared Pearson coefficient and making sure they are equal <insert formula here>. Both indices show a positive linear relationship
+
+
+res <- residuals(reg.bmi.le)
+# res
+Sorted_Res <- sort(res)
+# head(Sorted_Res) # 92   ,    86     ,   142      ,  28     ,    4   ,     33 ,
+# tail(Sorted_Res) #      174  ,     145    ,  47   ,   129     , 143  ,     82
+
+# head(Sorted_Res), tail(Sorted_Res)))
+# which(x= c(head(Sorted_Res), tail(Sorted_Res)),arr.ind =TRUE)
+df2 <- df[-c(92,86,142,28,4,33,174,145,47,129,143,82),]
+# df3 <- df2[,]
+
+reg.bmi.le2 <- lm(df2$Life.expectancy ~ df2$BMI)
+#plot(BMI,Life.expectancy)
+# summary(reg.bmi.le2)
+e_new<-reg.bmi.le2$residuals
+RMSE_new<-round(sqrt(sum(e_new^2)/(length(df2$BMI)-2)),2)
+#RMSE_new
+
+security_check2 <- cor(df2$BMI, df2$Life.expectancy, use = "complete.obs")**2
+# security_check2
+
+##The values of the variables were re-examined after omitting the abnormal observations. We believe that standard deviations will decrease
+
+
+# summary(df)
+# summary(df2)
+#summary(lm(df2$Life.expectancy ~ df2$BMI))
+#summary(lm(Life.expectancy ~ BMI))
+
+# reg.bmi.le <- lm(Life.expectancy ~ BMI)
+# plot(BMI,Life.expectancy, main = "Average BMI VS Average Life Expectency")
+# abline(reg.bmi.le,lwd=1.5,col="green")
+# abline(reg.bmi.le2,lwd=1,col="blue")
+```
+
+$RMSE=$ \ `r RMSE` Years of life expectancy, a small variance of the residuals, suggesting a good accuracy of our model.  \br
+
+### Outlires Handeling
+Out of the `r length(df$Country)` observations, we removed the 12 values with most extreme residuals.
+We omitted 12 extreme residuals.,and the value of RMSE decreased from `r RMSE` to
+`r RMSE_new`.
+
+\n $R^2_{new}:= r_{new}^2(X,Y)=$ `r round(security_check2,2)`
+
+Our average BMI based model explains almost `r ceiling (cor(df2$BMI, df2$Life.expectancy)^2)/2` of the variance of average life expectancy in a country.
+
+#### Demonstrating our model with 3 random samples:
+
+```{r , echo=FALSE}
+## the first observation in the df 
+# "observation number one - afghanistan,2015,65,19.1"
+country<-sample(df2$Country, size = 3)
+#country
+
+a_hat <- cov(df2$Life.expectancy, df2$BMI)/var(df2$BMI)
+df3 <- cbind(df2[df2$Country %in% country,],a_hat)
+
+#a_hat
+b_hat <- mean(df3$Life.expectancy, na.rm = TRUE)-a_hat*mean(df3$BMI, na.rm = TRUE)
+#b_hat
+df3 <- cbind(df3, b_hat)
+
+Y_hat_LEYears <- round(a_hat*df3$BMI + b_hat,2)
+Residual <-round(abs(df3$Life.expectancy-Y_hat_LEYears),2)
+df4 <- cbind(df3[df3$Country %in% country,], Y_hat_LEYears)
+df4 <- cbind(df4, Residual)
+
+head(df4)
+```
+
+```{r eval=FALSE, include=FALSE}
+
+# summary(df2)
+a_hat <- cov(df2$Life.expectancy, df2$BMI,  use = "pairwise.complete.obs")/var(df2$BMI,na.rm = "True")
+a_hat
+b_hat <- mean(df2$Life.expectancy, na.rm = TRUE)-a_hat*mean(df2$BMI, na.rm = TRUE)
+b_hat
+y_hat <- a_hat*df2$BMI + b_hat
+
+example1 <-y_hat[19.1]
+residual1 <- example1 - df2$Life.Expectancy.Years[1]
+# residual1
+
+
+##for the next example we will take ob number 103
+df2[103,]
+example2 <- y_hat[103]
+# example2
+residual2 <- example2 - df2$Life.expectancy[103]
+# residual2
+```
