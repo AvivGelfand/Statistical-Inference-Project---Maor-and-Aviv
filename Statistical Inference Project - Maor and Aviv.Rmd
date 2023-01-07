@@ -1,5 +1,5 @@
 ---
-title: "Inferencial Statistics Analysis Project "
+title: "Inferencial Statistics Analysis Project"
 author: "Aviv Gelfand and Maor Moshe  -  03/12/2022"
 output:
   html_document: 
@@ -11,7 +11,8 @@ editor_options:
   chunk_output_type: console
 ---
 
-#### 1) Recall of our previous project
+
+#### Recall of our previous project
 Recall that in the previews project we used WHO table of Average BMI and life expectancy for 177 countries in the world.
 [Source](https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who?resource=download).
 
@@ -43,89 +44,129 @@ BMI <- df$BMI
 # setBasic()
 ```
 
-##### 1) Point Estimators - 
-
-
-### 2) Inference Statistics
-#### Estemeting:
-
-
-```{r echo=FALSE, message=FALSE, warning=FALSE }
+#### 1) Point Estimators
+```{r  echo=FALSE, ,message=FALSE, warning=FALSE}
 #Q1 #Assume Y distributs norm and asses E(y) and var(y)
 # by MLE method:
 Y_mu_hat <- mean(Life.expectancy)
-Y_mu_hat
+# Y_mu_hat
 
 Y_sig_square_hat <- var(Life.expectancy)
-Y_sig_square_hat
-sqrt(Y_sig_square_hat)
+# Y_sig_square_hat
+# sqrt(Y_sig_square_hat)
 
 
 #Hanfanim - moment method :
 Y_mu_hat_mom <- mean(Life.expectancy)
-Y_mu_hat_mom
+# Y_mu_hat_mom
 
 Ey_squre <- Y_mu_hat_mom^2
 y_squre <- mean(Life.expectancy^2)
-Y_sig_squre_hat_mom <- y_squre - Ey_squre
-Y_sig_squre_hat_mom
+Y_sig_squre_hat_mom_MLE <- y_squre - Ey_squre
+# Y_sig_squre_hat_mom
 
 ```
-'Both of the astimators are unbiased. we can see that mom astimator has smaller varity and hence smaller mse rate. therfore we will proceed the assignment with mom astimator'
+##### a) Estimating Expectency and Variance Y
+נניח שלערך החזוי, תוחלת החיים הממוצעת במדינה, התפלגות נורמלית. אז נגדיר אומד לתוחלת לפי שיטת הנראות המקסימלית או לפי שיטת המומנטים (אותה דרך).
 
-```{r Q1 b}
-# install.packages(Hmisc)
+$\hat{\mu_y} := \overline{Y} = \frac{1}{n} \sum_{i = 1}^{n}y_i$ = `r round(Y_mu_hat,2)`
+
+ונגדיר אומד לשונות לפי שיטת הנראות המקסימלית
+
+$\hat{\sigma^2_y} := \overline{Y^2} - \overline{Y}^2= \frac{1}{n} \sum_{i = 1}^{n}(y_i-\overline{Y})^2$  = `r round(Y_sig_squre_hat_mom_MLE,2)`
+
+בנוסף, למדנו בכיתה על אומד חסר הטייה מקובל לשונות להתפלגות נורמלית כך ש:
+
+$\hat{\sigma^2_y} := S^2_n :=\frac{1}{n-1}\sum_{i = 1}^{n}(y_i-\overline{Y})^2$  = `r round(var(Life.expectancy),2)`
+
+Both of the estimators are unbiased. We can see that mom estimator has smaller variety and hence smaller mse rate. therefore we will proceed the assignment with mom astimator.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE }
 m <- min(BMI)
 W<- BMI-m
 W <-sort(W)
-W
+# W
 # Moment method 
 a_hat_moment <- (mean(W)^2)/((mean(W^2))-(mean(W)^2))
-a_hat_moment
+# a_hat_moment
 # mean(BMI)^2
 lambda_hat_moment <- (mean(W))/((mean(W^2))-(mean(W)^2))
-lambda_hat_moment
+# lambda_hat_moment
+```
 
+##### b) Estimating Expectency and Variance of X using Gamma
+We denote the independent variable, BMI as $X$, then: 
+
+Let $m=min(X)$ and Let $W:=X-m$ and assume $W \sim Gamma(\alpha, \lambda)$
+
+Then, by the formulas we prooved in class, the point estimator of $\alpha$ would be:
+$\hat{\alpha}=\frac{\overline{W}^2}{\overline{W}^2-\overline{W^2}}$
+
+And the point estimator of $\lambda$ would be:
+$\hat{\lambda}=\frac{\overline{W}^2}{\overline{W}^2-\overline{W^2}}$
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE }
 #1.c
+quantiles <- c(0.1,0.5,0.75,0.9)
 quants <- c(0.1,0.5,0.75,0.9)
-quants_X <- qgamma(quants, shape = a_hat_moment, scale = lambda_hat_moment)
-quants_X
-quantile(BMI, probs = quants) #for x
-quantile(Life.expectancy, probs=quants) # for y
+
+w_quants <- qgamma(quantiles, shape = a_hat_moment, scale = lambda_hat_moment)
+# quants_X
+X_quants= quantile(BMI, probs = quantiles) #for x
+Y_quants= quantile(Life.expectancy, probs=quantiles) # for y
+
 #1.d
-quantile(W, probs=quants)
+# quantile(W, probs=quants)
 # whit out hypothesis test, it seems that there is corrletion between the cars
+library(dplyr)
+
+df1 = data.frame( rbind(X_quants , Y_quants, w_quants))
+colnames(df1) <- c(0.1,0.5,0.75,0.9)
+df1
+```
+
+##### c-d) Quantiles of X,Y and W
+**Quantiles**:  [0.1,0.5,0.75,0.9]
+Table: 
+
+$X:$ [`r round(quantile(BMI, probs = quants),2)`] 
+
+$Y:$ [`r round( quantile( Life.expectancy, probs=quants), 2)`]
+
+$W:$ [`r round(c(1,1,1,1,1),2)`]
 
 
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE }
 
 #1.e hanfanim 2
-plot(ecdf(W))
-points(ecdf(gamma_percentiles[1:100]),col='red')
-
-gamma_percentiles <- qgamma(percentiles, shape = a_hat_moment, scale = lambda_hat_moment)
-
-# Compute ECDFs
-W_ecdf <- ecdf(W)
-gamma_ecdf <- ecdf(gamma_percentiles[1:100])
-
-# Set up the plot
-plot(W_ecdf, xlim = c(min(W, gamma_percentiles[1:100]), max(W, gamma_percentiles[1:100])),col='lightgreen' ,xlab = "Value", ylab = "ECDF", main = "theortical precentials to gamma precentails Comparison")
-
-# Add the second ECDF to the plot
-lines(gamma_ecdf, col = "lightblue")
-
-# Add a legend
-legend("bottomright", c("W", "gamma_percentiles"), col = c("blue", "red"), lty = 1)
-
+# # percentiles ??
+# gamma_percentiles <- qgamma(percentiles, shape = a_hat_moment, scale = lambda_hat_moment)
+# plot(ecdf(W))
+# points(ecdf(gamma_percentiles[1:100]),col='red')
+# 
+# 
+# # Compute ECDFs
+# W_ecdf <- ecdf(W)
+# gamma_ecdf <- ecdf(gamma_percentiles[1:100])
+# 
+# # Set up the plot
+# plot(W_ecdf, xlim = c(min(W, gamma_percentiles[1:100]), max(W, gamma_percentiles[1:100])),col='lightgreen' ,xlab = "Value", ylab = "ECDF", main = "theortical precentials to gamma precentails Comparison")
+# 
+# # Add the second ECDF to the plot
+# lines(gamma_ecdf, col = "lightblue")
+# 
+# # Add a legend
+# legend("bottomright", c("W", "gamma_percentiles"), col = c("blue", "red"), lty = 1)
 ```
 
-```{r}
-
-```
+# Question 2 - Confidence Intervals
 
 
-
-```{r}
+```{r  Q2 }
 # Question 2 - CI 
 
 ## for the expectancy
@@ -156,12 +197,17 @@ Sigma_CI #54.94 #78.94
 var(Life.expectancy)
 
 ```
+
+# Question 3 - H
+
 H0: תוחלת אורך החיים של "העולם השמן" יהיה זהה לתוחלת אורך החיים של "העולם הרזה". במילים אחרות - השערת ה0 טוענת שאין תלות בין בימאמאי לתוחלת אורך החיים
 
 העולם השמן - מדינות בהן הביאמאי גדול מחציון הביאמאי בעולם
 העולם הרזה - מדינות בהן הבימי גדול מחציון הביאמאי בעולם
 
 H1: תוחלת אורך החיים של העולם השמן _קטנה_ מתוחלת אורך החיים של העולם הרזה
+
+הסבר: אנחנו משערים שהשמנה גוררת ירידה בתוחלת משך החיים ולכן בתוחלת, אורך החיים של העולם השמן יהיה קצר יותר מאורך החיים של העולם הרזה. (ניתן להיזכר בעבודה הקודמת שמקדם המתאם בין אורך חיים להשמנה היה 0.36 כדי לקבל רמז/סיגנל שהקשר קיים). 
 
 We want to test if there are times in the day in which earthquakes are more or less commons. Let $t_i$ be the time of each earthquake $i$ in the day (between $00:00:00$ and $23:59:59$), in units of hours, calculated in (d.). <br> 
 
@@ -173,10 +219,18 @@ $$H_1: \mu_{y|x_i > med(X)} < \mu_{y|x_i<med(X)}$$
 
 In statistical testing, a test statistic is a numerical measure that is used to evaluate the evidence in a sample against a hypothesis. It is calculated from the sample data and is used to decide whether the sample provides sufficient evidence to reject the hypothesis - therfore its $mean(x)$
 
+If the null hypothesis states that the means of two groups are equal, it is assuming that the groups are evenly distributed, or that there is no difference between the groups.
 
-```{r Q3 }
+
+```{r Q3a }
 df_low <- df[df$BMI<median(df$BMI),]
 df_high <- df[df$BMI>=median(df$BMI),]
+
+# mean(df_low$Life.expectancy)
+# mean(df_high$Life.expectancy)
+
+# mean(BMI)
+# median(BMI)
 
 y_lower <- df_low$Life.expectancy
 y_high <- df_high$Life.expectancy
@@ -188,20 +242,56 @@ mean(y_lower)
 mean(y_high)
 
 #search for the p-value
+#since we don't know the presice variance of the life expctancy we will use t test 
 
-p_value <- (mean(y_lower) - mean(y_high))/(sd)
+  
+p_value <- pt((mean(y_lower) -  mean(y_high)) /(sd(y_lower)/ sqrt(length(y_lower))), df = length(y_lower)-1)
+
+# p_value = exp(-16)*2.798601
+p_value
+
+```
 
 
-S2_n = n-1(var(y_lower))
-  
-  
-  
+```{r}
+D_s <-  y_high - y_lower
+S2D <- var(y_high) + var(y_lower)  # cov is 0
+meanDS <- mean(D_s)
+
+p_value <- pt((meanDS - (mean(y_high)- mean(y_lower)) /sqrt((S2D/(length(y_lower))))), df = length(y_lower)-1)
+p_value
+
+
+pt(meanDS / (sqrt(S2D/length(y_lower))) ,df = length(y_lower)-1)
+```
+
+ This is a very small p-value, which suggests that the difference in means between the two groups is statistically significant. In other words, the data provides strong evidence against the null hypothesis, which states that the means of the two groups are equal.
+
+Based on the p-value and the results of our (t-) test, we can conclude that the mean of the "low BMI" group is significantly different from the mean of the "high BMI" group.
+Hence we found out that the expected value of Y is smaller then in between the 2 groups.
+
+However, it's important to remember that a p-value of 0 does not necessarily mean that the null hypothesis is definitively false. It simply means that the data provides strong evidence against the null hypothesis.
+
+```{r}
+#2.d
+
+alpah = 0.03
+p.value = 2.798601e-16
+```
+p-value that is less than our significance level, then we can conclude that the null hypothesis is rejected
+
+
+
+```{r Q3 }
 critical_value <- mean(y_lower) + qnorm(0.95)*sd(y_lower)/sqrt(length(y_lower))
 critical_value
 
 
 
 ```
+
+
+# Old Lab:
 A distribution with two centric values can be seen(23,27).no values under 20 or above 32. (that indicates precise data because beyond this range its means extreme underweight or extreme obesity) 
 
 ```{r}
