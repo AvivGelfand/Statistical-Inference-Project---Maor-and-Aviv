@@ -1,5 +1,5 @@
 ---
-title: "Linear Regression Statistical Analysis Project "
+title: "Inferencial Statistics Analysis Project "
 author: "Aviv Gelfand and Maor Moshe  -  03/12/2022"
 output:
   html_document: 
@@ -10,28 +10,28 @@ output:
 editor_options:
   chunk_output_type: console
 ---
-### 1) About the Data-Set
-We used WHO table of Average BMI and life expectancy for 177 countries in the world.
+
+#### 1) Recall of our previous project
+Recall that in the previews project we used WHO table of Average BMI and life expectancy for 177 countries in the world.
 [Source](https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who?resource=download).
 
 **Predicted / dependent variable Y**: Life expectancy - refers to average number of years a person can expect to live in a country.
 
-**Undependable variable X**: BMI - Body Mass Index units. A calculation using a person's height and weight. The formula is $BMI = \frac{kg}{h_m^2}$ where kg is a person's weight in kilograms and mh is their height in meters. A BMI of 25.0 or more is overweight, while the healthy range is 18.5 to 24.9.
+**Undependable variable X**: BMI - Body Mass Index units. A calculation using a person's height and weight. 
 
-**We hypothesize** that BMI is an explanatory variable for a person's life expectancy. 
+**We hypothesized** that BMI is an explanatory variable for a person's life expectancy. 
 
-##### 1 i) Handling an in the data
-We noticed there are observations between 0 and 10 (physically impossible BMI values). WE Removed the noise in the data. Observations where BMI is smaller then 10 are omitted.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE }
 # getwd()
-setwd("C:/Users/avivg/OneDrive/Documents/R/Statistical Analysis Course/Lab")
+setwd("C:/Users/avivg/OneDrive/Documents/R/Statistical Analysis Course/Lab2") #Aviv's setwd
+# setwd("C:/") #Maor's setwd, *aviv* commit it when you working
 df <- read.csv("WHO_BMI_2015.csv")
 Life.expectancy <- df$Life.expectancy
 BMI <- df$BMI
 # head(df)
 # na.omit(df)
-plot(main = "Clean Scatter Plot",BMI,Life.expectancy, col="blue")
+# plot(main = "Clean Scatter Plot",BMI,Life.expectancy, col="blue")
 # abline(v=10, col="red") 
 
 # setBasic <- function (){
@@ -43,21 +43,15 @@ plot(main = "Clean Scatter Plot",BMI,Life.expectancy, col="blue")
 # setBasic()
 ```
 
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-#BMI1 <-  df$BMI >10
-#df2 <- df[df$BMI > 10,]
-#df <- df2
-#plot(df2$BMI, df2$Life.Expectancy.Years )
-```
+##### 1) Point Estimators - 
 
 
 ### 2) Inference Statistics
 #### Estemeting:
 
 
-```{r}
-#Q1
+```{r echo=FALSE, message=FALSE, warning=FALSE }
+#Q1 #Assume Y distributs norm and asses E(y) and var(y)
 # by MLE method:
 Y_mu_hat <- mean(Life.expectancy)
 Y_mu_hat
@@ -75,71 +69,135 @@ Ey_squre <- Y_mu_hat_mom^2
 y_squre <- mean(Life.expectancy^2)
 Y_sig_squre_hat_mom <- y_squre - Ey_squre
 Y_sig_squre_hat_mom
+
 ```
+'Both of the astimators are unbiased. we can see that mom astimator has smaller varity and hence smaller mse rate. therfore we will proceed the assignment with mom astimator'
 
 ```{r Q1 b}
-
 # install.packages(Hmisc)
-
-W<- BMI-min(BMI)
+m <- min(BMI)
+W<- BMI-m
+W <-sort(W)
 W
-gamma.shape(W)
-a_hat_MLE <- gamma.dispersion(W)
-a_hat_MLE
-
 # Moment method 
-a_hat_moment <- (mean(BMI)^2)/((mean(BMI^2))-(mean(BMI)^2))
+a_hat_moment <- (mean(W)^2)/((mean(W^2))-(mean(W)^2))
 a_hat_moment
 # mean(BMI)^2
-lambda_hat_moment <- (mean(BMI))/((mean(BMI^2))-(mean(BMI)^2))
+lambda_hat_moment <- (mean(W))/((mean(W^2))-(mean(W)^2))
 lambda_hat_moment
-quants <- c(10,50,75,90)
+
+#1.c
+quants <- c(0.1,0.5,0.75,0.9)
 quants_X <- qgamma(quants, shape = a_hat_moment, scale = lambda_hat_moment)
-qgamma(10, shape = a_hat_moment, rate = lambda_hat_moment)
-
-# Log-likelihood
-logLikelihood = function(par, data){
-  df <- function(f, low, up, par1, par2) {
-    f*log(pgamma(up, par1, par2) - pgamma(low, par1, par2))
-  }  
-  shape = exp(par[1])
-  rate = exp(par[2])  
-  -sum(df(dat$f, dat$L, dat$U, shape, rate))
-}
-
-# Fit
-res <- optim(par = c(3, -6), fn = logLikelihood, data = dat, control = list(reltol = 1e-15))
+quants_X
+quantile(BMI, probs = quants) #for x
+quantile(Life.expectancy, probs=quants) # for y
+#1.d
+quantile(W, probs=quants)
+# whit out hypothesis test, it seems that there is corrletion between the cars
 
 
-# b_hat_moment <- 
-# BMI^2
-# (mean(BMI^2))
-# 28^2
-# MLE GAMMA
-# max(BMI)^2
-# mean.op <- mean(W)
-# sum.log <- sum(log(W))
-# n <- length(W)
-# 
-# dif.gam = function(alpha){sum.log + n*log(alpha/mean.op) - n*digamma(alpha)}
-# 
-# dif.gam(1)
-# dif.gam(1:5)
-# alp <- seq(4,5,0.01)
-# ell.alp <- dif.gam(alp)
-# plot(alp,ell.alp,type='l')
-# abline(h=0)
-# 
-# uniroot(dif.gam,c(4,5))
-# 
-# alpha.MLE <- uniroot(dif.gam,c(4,5))$root
-# lambda.MLE <- alpha.MLE/mean.op
-# 
-# hist(optime,breaks=15,freq=FALSE)
-# lines(x,dgamma(x,alpha.moment,lambda.moment),col='blue')
-# lines(x,dlnorm(x,mu,sigma),col='red')
-# x <- seq(0,10,0.1)
-# lines(x,dgamma(x,alpha.MLE,lambda.MLE),col='black')
+
+#1.e hanfanim 2
+plot(ecdf(W))
+points(ecdf(gamma_percentiles[1:100]),col='red')
+
+gamma_percentiles <- qgamma(percentiles, shape = a_hat_moment, scale = lambda_hat_moment)
+
+# Compute ECDFs
+W_ecdf <- ecdf(W)
+gamma_ecdf <- ecdf(gamma_percentiles[1:100])
+
+# Set up the plot
+plot(W_ecdf, xlim = c(min(W, gamma_percentiles[1:100]), max(W, gamma_percentiles[1:100])),col='lightgreen' ,xlab = "Value", ylab = "ECDF", main = "theortical precentials to gamma precentails Comparison")
+
+# Add the second ECDF to the plot
+lines(gamma_ecdf, col = "lightblue")
+
+# Add a legend
+legend("bottomright", c("W", "gamma_percentiles"), col = c("blue", "red"), lty = 1)
+
+```
+
+```{r}
+
+```
+
+
+
+```{r}
+# Question 2 - CI 
+
+## for the expectancy
+mean(Life.expectancy)
+qnorm(0.985)
+Upper_CI_miu_y <- mean(Life.expectancy) + qnorm(0.985)*sd(Life.expectancy)/(sqrt(length(Life.expectancy)))
+Upper_CI_miu_y
+
+Lower_CI_miu_y <-mean(Life.expectancy) - qnorm(0.985)*sd(Life.expectancy)/(sqrt(length(Life.expectancy))) 
+Lower_CI_miu_y
+Miu_CI <- c(Lower_CI_miu_y,Upper_CI_miu_y) 
+Miu_CI #70.50 #73.14
+# we can see that the value of x_hat is in the range 
+mean(Life.expectancy)
+ 
+## for the varience of life expectancy 
+
+n<-length(Life.expectancy)
+lower_ci_sigma_y<-(n-1)*var(Life.expectancy)/qchisq(0.955,n-1)
+lower_ci_sigma_y
+
+upper_ci_sigma_y <- 
+(n-1)*var(Life.expectancy)/qchisq(0.045,n-1)
+upper_ci_sigma_y
+Sigma_CI <- c(lower_ci_sigma_y,upper_ci_sigma_y)
+Sigma_CI #54.94 #78.94
+ # we can see that the value of Sy is in the range -->
+var(Life.expectancy)
+
+```
+H0: תוחלת אורך החיים של "העולם השמן" יהיה זהה לתוחלת אורך החיים של "העולם הרזה". במילים אחרות - השערת ה0 טוענת שאין תלות בין בימאמאי לתוחלת אורך החיים
+
+העולם השמן - מדינות בהן הביאמאי גדול מחציון הביאמאי בעולם
+העולם הרזה - מדינות בהן הבימי גדול מחציון הביאמאי בעולם
+
+H1: תוחלת אורך החיים של העולם השמן _קטנה_ מתוחלת אורך החיים של העולם הרזה
+
+We want to test if there are times in the day in which earthquakes are more or less commons. Let $t_i$ be the time of each earthquake $i$ in the day (between $00:00:00$ and $23:59:59$), in units of hours, calculated in (d.). <br> 
+
+Test the null hypothesis $H_0: t_i \sim U[0, 24]$ against the complex alternative 
+$$H_0: \mu_{y|x_i > med(X)} = \mu_{y|x_i<med(X)} $$
+$$H_1: \mu_{y|x_i > med(X)} < \mu_{y|x_i<med(X)}$$
+<br>
+
+
+In statistical testing, a test statistic is a numerical measure that is used to evaluate the evidence in a sample against a hypothesis. It is calculated from the sample data and is used to decide whether the sample provides sufficient evidence to reject the hypothesis - therfore its $mean(x)$
+
+
+```{r Q3 }
+df_low <- df[df$BMI<median(df$BMI),]
+df_high <- df[df$BMI>=median(df$BMI),]
+
+y_lower <- df_low$Life.expectancy
+y_high <- df_high$Life.expectancy
+hist(y_lower)
+hist(y_high)
+plot(y_high,type = 'line')
+lines(y_lower, col='blue')
+mean(y_lower)
+mean(y_high)
+
+#search for the p-value
+
+p_value <- (mean(y_lower) - mean(y_high))/(sd)
+
+
+S2_n = n-1(var(y_lower))
+  
+  
+  
+critical_value <- mean(y_lower) + qnorm(0.95)*sd(y_lower)/sqrt(length(y_lower))
+critical_value
 
 
 
