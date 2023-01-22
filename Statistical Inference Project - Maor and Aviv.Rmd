@@ -1,5 +1,5 @@
 ---
-title: "Inferencial Statistics Project"
+title: "Inferential Statistics Project"
 author: "Aviv Gelfand and Maor Moshe  -  03/12/2022"
 output:
   html_document: 
@@ -28,11 +28,9 @@ Recall that in the previews project we used WHO table of Average BMI and life ex
 setwd("C:/Users/avivg/OneDrive/Documents/R/Statistical Analysis Course/Lab2") #Aviv's setwd
 # setwd("C:/") #Maor's setwd, *aviv* commit it when you working
 df <- read.csv("WHO_BMI_2015.csv")
-Life.expectancy <- df$Life.expectancy
-BMI <- df$BMI
 ```
 
-#### 1) Point Estimators
+### Question 1) Point Estimators
 ```{r  echo=FALSE, ,message=FALSE, warning=FALSE}
 #Q1 #Assume Y distributs norm and asses E(y) and var(y)
 # by MLE method:
@@ -55,19 +53,20 @@ Y_sig_squre_hat_mom_MLE <- y_squre - Ey_squre
 
 ```
 ##### **1. a)** Estimating Expectency and Variance Y
-נניח שלערך החזוי, תוחלת החיים הממוצעת במדינה, התפלגות נורמלית. אז נגדיר אומד לתוחלת לפי שיטת הנראות המקסימלית או לפי שיטת המומנטים (אותה דרך).
+Let's assume that the predicted value, the average life expectancy in the country, is normally distributed. 
+
+We could define an estimator for the expectancy according to the method of MLE or the  moment's method (the same, a result in a normal distribution).
 
 $\hat{\mu_y} := \overline{Y} = \frac{1}{n} \sum_{i = 1}^{n}y_i$ = `r round(Y_mu_hat,2)`
 
-ונגדיר אומד לשונות לפי שיטת הנראות המקסימלית
 
 $\hat{\sigma^2_y} := \overline{Y^2} - \overline{Y}^2= \frac{1}{n} \sum_{i = 1}^{n}(y_i-\overline{Y})^2  =$ `r round(Y_sig_squre_hat_mom_MLE,2)`
 
-בנוסף, למדנו בכיתה על אומד חסר הטייה מקובל לשונות להתפלגות נורמלית כך ש:
+In addition, we learned in class about a conventional unbiased estimator for the variance of a normal distribution:
 
 $\hat{\sigma^2_y} := S^2_n :=\frac{1}{n-1}\sum_{i = 1}^{n}(y_i-\overline{Y})^2  =$ `r round(var(Life.expectancy),2)`
 
-Both of the estimators are unbiased. We can see that mom estimator has smaller variety and hence smaller mse rate. therefore we will proceed the assignment with mom astimator.
+We will proceed with the conventional estimator $S^2_n$ in the following questions.
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE }
@@ -92,7 +91,7 @@ Then, by the formulas we prooved in class, the point estimator of $\alpha$ would
 $\hat{\alpha}=\frac{\overline{W}^2}{\overline{W}^2-\overline{W^2}}$ = `r a_hat_moment`
 
 And the point estimator of $\lambda$ would be:
-$\hat{\lambda}=\frac{\overline{W}^2}{\overline{W}^2-\overline{W^2}}$ = `r lambda_hat_moment`
+$\hat{\lambda}=\frac{\overline{W}}{\overline{W}^2-\overline{W^2}}$ = `r lambda_hat_moment`
 
 Thus, $W:= X-m \sim Gamma(\alpha =$ `r a_hat_moment` $, \lambda =$ `r lambda_hat_moment` $)$
 
@@ -121,127 +120,183 @@ df1
 
 We can see a similarity between the theoretical and the empirical parameters.
 
+##### **1. e) Bonus:** Plotting the Theoretical VS Empirical precentiles
+
+```{r echo=FALSE, message=FALSE, warning=FALSE }
+library(tidyverse)
+library(dplyr)
+#1.e hanfanim 2
+percentiles <- seq(0.01,0.99,0.01)
+# percentiles
+
+quantiles <- seq(0.01,0.99,0.01)
+quants <- seq(0.01,0.99,0.01)
+
+Y_Theoretical <- qnorm(quantiles, mean = Y_mu_hat_mom, sd = sd(Life.expectancy) )
+# row.names(Y_Theoretical) <- percentiles
+X_Theoretical <-  qgamma(quantiles, shape = a_hat_moment, scale = lambda_hat_moment) + m
+
+W_Theoretical <- qgamma(quantiles, shape = a_hat_moment, scale = lambda_hat_moment)
+# quants_X
+#1.d
+X_Empirical= quantile(BMI, probs = quantiles) #for x
+Y_Empirical = quantile(Life.expectancy, probs=quantiles) # for y
+W_Empirical = quantile(W, probs=quants)
+
+
+# Y
+plot(ecdf(Y_Theoretical),main="Y Values: Theoretical VS Empirical", xlab="Value of Y",	ylab="Precentile", col='lightblue')
+lines(ecdf(Y_Empirical), col='darkgrey')
+legend("bottomright",pch="-", col=c("lightblue", 'darkgrey'), c("Theoretical", "Empirical"), cex=1,	)
+
+#X
+plot(ecdf(X_Theoretical),main="X Values: Theoretical VS Empirical", xlab="Value of X",	ylab="Precentile", col='lightblue')
+lines(ecdf(X_Empirical), col='darkgrey')
+legend("bottomright",pch="-", col=c("lightblue", 'darkgrey'), c("Theoretical", "Empirical"), cex=1,	)
+
+# W
+plot(ecdf(W_Theoretical),main="W Values: Theoretical VS Empirical", xlab="Value of W",	ylab="Precentile", col='lightblue')
+lines(ecdf(W_Empirical), col='darkgrey')
+legend("bottomright",pch="-", col=c("lightblue", 'darkgrey'), c("Theoretical", "Empirical"), cex=1,	)
+```
+
+## Question 2 - Confidence Intervals
+
+#### **CI of E[Y]** where confidence level is 97%
+
+We don't know What $\sigma_Y$ is. Hence, we calculate the confidence interval of an expected life expectancy in a country (our Y) as follows:
+
+$CI = [\overline{Y_n} \pm t_{n-1,1-\frac{a}{2}} \ \frac{S_n}{\sqrt[]{n}}] = [71.82\pm t_{n=177, \ df=0.985} \  \frac{8.07}{ \sqrt[]{177} }] = [70.49, \ 73.15]$
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE }
-
-#1.e hanfanim 2
-# # percentiles ??
-# gamma_percentiles <- qgamma(percentiles, shape = a_hat_moment, scale = lambda_hat_moment)
-# plot(ecdf(W))
-# points(ecdf(gamma_percentiles[1:100]),col='red')
-# 
-# 
-# # Compute ECDFs
-# W_ecdf <- ecdf(W)
-# gamma_ecdf <- ecdf(gamma_percentiles[1:100])
-# 
-# # Set up the plot
-# plot(W_ecdf, xlim = c(min(W, gamma_percentiles[1:100]), max(W, gamma_percentiles[1:100])),col='lightgreen' ,xlab = "Value", ylab = "ECDF", main = "theortical precentials to gamma precentails Comparison")
-# 
-# # Add the second ECDF to the plot
-# lines(gamma_ecdf, col = "lightblue")
-# 
-# # Add a legend
-# legend("bottomright", c("W", "gamma_percentiles"), col = c("blue", "red"), lty = 1)
-```
-
-# Question 2 - Confidence Intervals
-
-
-```{r  Q2 }
 # Question 2 - CI 
 
 ## for the expectancy
-mean(Life.expectancy)
-qnorm(0.985)
-Upper_CI_miu_y <- mean(Life.expectancy) + qnorm(0.985)*sd(Life.expectancy)/(sqrt(length(Life.expectancy)))
-Upper_CI_miu_y
+# mean(Life.expectancy)
+# qnorm(0.985)
+qt_ = qt(0.985,df=length(Life.expectancy)-1)
+Upper_CI_miu_y <- mean(Life.expectancy) + qt_*sd(Life.expectancy)/(sqrt(length(Life.expectancy)))
+# Upper_CI_miu_y
 
-Lower_CI_miu_y <-mean(Life.expectancy) - qnorm(0.985)*sd(Life.expectancy)/(sqrt(length(Life.expectancy))) 
-Lower_CI_miu_y
+Lower_CI_miu_y <-mean(Life.expectancy) - qt_*sd(Life.expectancy)/(sqrt(length(Life.expectancy))) 
+# Lower_CI_miu_y
 Miu_CI <- c(Lower_CI_miu_y,Upper_CI_miu_y) 
-Miu_CI #70.50 #73.14
+# Miu_CI #70.50 #73.14
 # we can see that the value of x_hat is in the range 
-mean(Life.expectancy)
+# mean(Life.expectancy)
  
 ## for the varience of life expectancy 
+```
 
+
+#### **CI of var(Y)** where confidence level is 97%
+
+We calculate the confidence interval of the variance of life expectancy in a country (our Y) as follows:
+
+$CI = [\frac{(n-1)S_n^2}{\chi^2_{(n-1),1-\frac{a}{2}}},\frac{(n-1)S_n^2}{\chi^2_{(n-1),\frac{a}{2}}}]=[\frac{(176)*65.25}{\chi^2_{(176), \ 0.96}},\frac{(176)*65.25}{\chi^2_{(176), \ 0.04}}] = [54.95, 78.94]$
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE }
 n<-length(Life.expectancy)
 lower_ci_sigma_y<-(n-1)*var(Life.expectancy)/qchisq(0.955,n-1)
-lower_ci_sigma_y
+# lower_ci_sigma_y
 
 upper_ci_sigma_y <- 
 (n-1)*var(Life.expectancy)/qchisq(0.045,n-1)
-upper_ci_sigma_y
+# upper_ci_sigma_y
 Sigma_CI <- c(lower_ci_sigma_y,upper_ci_sigma_y)
-Sigma_CI #54.94 #78.94
+# Sigma_CI #54.94 #78.94
  # we can see that the value of Sy is in the range -->
-var(Life.expectancy)
-
+# var(Life.expectancy)
 ```
 
-# Question 3 - H
+## Question 3 - Hypotheses Testing
 
-H0: תוחלת אורך החיים של "העולם השמן" יהיה זהה לתוחלת אורך החיים של "העולם הרזה". במילים אחרות - השערת ה0 טוענת שאין תלות בין בימאמאי לתוחלת אורך החיים
+We want to examine if there is a correlation between the Average BMI ($X$) and Life Expectancy ($Y$) in a country. 
 
-העולם השמן - מדינות בהן הביאמאי גדול מחציון הביאמאי בעולם
-העולם הרזה - מדינות בהן הבימי גדול מחציון הביאמאי בעולם
+We divide all of our (X,Y) to: $U = \{(X_i,Y_i)| X_i \ge med(X_i)\}$ and: $L = \{(X_i,Y_i)| X_i < med(X_i)  \}$.
 
-H1: תוחלת אורך החיים של העולם השמן _קצרה_ מתוחלת אורך החיים של העולם הרזה
+$U$ denotes the **higher BMI world** $:=$ countries where the average person has a higher BMI than the median BMI in the world.
 
-הסבר: אנחנו משערים שהשמנה גוררת ירידה בתוחלת משך החיים ולכן בתוחלת, אורך החיים של העולם השמן יהיה קצר יותר מאורך החיים של העולם הרזה. (ניתן להיזכר בעבודה הקודמת שמקדם המתאם בין אורך חיים להשמנה היה 0.36 כדי לקבל רמז/סיגנל שהקשר קיים). 
+$L$ denotes the **lower BMI world** $:=$ countries where the average person has a lower BMI than the median BMI in the world.
 
-We want to test if there are times in the day in which earthquakes are more or less commons. Let $t_i$ be the time of each earthquake $i$ in the day (between $00:00:00$ and $23:59:59$), in units of hours, calculated in (d.). <br> 
-
-Test the null hypothesis $H_0: t_i \sim U[0, 24]$ against the complex alternative 
-$$H_0: \mu_{y|x_i > med(X)} = \mu_{y|x_i<med(X)} $$
-$$H_1: \mu_{y|x_i > med(X)} < \mu_{y|x_i<med(X)}$$
-<br>
-
-
-In statistical testing, a test statistic is a numerical measure that is used to evaluate the evidence in a sample against a hypothesis. It is calculated from the sample data and is used to decide whether the sample provides sufficient evidence to reject the hypothesis - therfore its $mean(x)$
-
-If the null hypothesis states that the means of two groups are equal, it is assuming that the groups are evenly distributed, or that there is no difference between the groups.
-
-
-```{r Q3a }
+```{r echo=FALSE, message=FALSE, warning=FALSE }
 df_low <- df[df$BMI<median(df$BMI),]
 df_high <- df[df$BMI>=median(df$BMI),]
 
-mean(df_low$Life.expectancy)
-mean(df_high$Life.expectancy)
+# mean(df_low$Life.expectancy)
+# mean(df_high$Life.expectancy)
 
 # mean(BMI)
 # median(BMI)
 
 y_lower <- df_low$Life.expectancy
 y_high <- df_high$Life.expectancy
-hist(y_lower)
-hist(y_high)
-#search for the p-value
-#since we don't know the presice variance of the life expctancy we will use t test 
+y_high <- y_high[0:88]
 ```
 
+#### **3. a)** Verbal formulation of the research hypotheses
 
-```{r}
-D_s <-  y_high - y_lower
-S2D <- var(y_high) + var(y_lower)  # cov is 0
-meanDS <- mean(D_s)
-p_value = pt(meanDS / (sqrt(S2D/length(y_lower))) ,df = length(y_lower)-1)
-p_value
+Our null hypothesis ($H_0$) assumes no correlation between Life expectancy ($Y$) and Average BMI ($X$). In other words, $H_0$ assumes both of our examined groups are identical, such that the difference of their means is equal to zero.
+
+
+**Our alternative hypothesis** ($H_1$) is that the **higher BMI world** would have a higher Life Expectancy then the *lower BMI world* (higher BMI where countries are richer).
+
+\br
+\br \br
+#### **3. b)** Statistical formulation of our hypotheses
+
+Let us denote $D= Y_U-Y_L$ \br
+
+Then: 
+
+  $H_0: \mu_{_D} = 0$    (two-tailed test) 
+
+
+  $H_1: \mu_{_D} > 0$\br
+
+ \br
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+d = y_high - y_lower
+p_val <- 1-pt(mean(d)/sqrt(var(d)/length(d)), length(d)-1)
+
+#since we assume H1>H0:
+# H1 > H0
+# p.value <- 1 - pt(q ,df = 87) 
+# p.value
+
+# כיוון שערך פי מאוד נמוך. נדחה את הייצ' אפס עבור כל רמת מובהקות גדולה מאפסילון. כלומר, העולם השמן אינו בעל אורך חיים זהה לעולם הרזה בכל רמת מובהקות.
+# q_e <- 1 - pt(mean(e)/(sqrt(var(e)/length(e))),87)
+# q_e
 ```
+#### **3. c)** Building a statistical test.
 
- This is a very small p-value, which suggests that the difference in means between the two groups is statistically significant. In other words, the data provides strong evidence against the null hypothesis, which states that the means of the two groups are equal.
+Our test-statistic is $\overline D$. We don't know it's real variance then $D \sim t_{88}$ under $H_0$.
 
-Based on the p-value, we can conclude that the mean of the "low BMI" group is significantly different from the mean of the "high BMI" group.
+Since we don't know the real variance of D, we estimate it as $\sigma_D^2= S_{D}^2=$ `r round(var(d),2)` with the above mentioned formula.
 
-However, it's important to remember that a p-value of 0 does not necessarily mean that the null hypothesis is definitively false. It simply means that the data provides strong evidence against the null hypothesis.
+Then: $P_{val}:= p_{_{H_0}}(Reject \ H_0) \underset{\overline D > 0}= 1-pt_{88}(\cfrac{\overline{D}\ -\ 0}{\sqrt{S_n^2/n}})=$ `r p_val`
 
-```{r}
+Hence, let our test be: Reject $H_0$ if $P_{val} > \alpha$ 
+
+ This is a very small p-value, which suggests that the difference in means between the two groups is statistically significant for every $\alpha$. In other words, the data provides strong evidence against $H_0$.
+
+#### **3. d)** Applying our statistical test 
+
+We set our significance level as $\alpha=0.03$ and we achieve:
+$P_{val} \approx 0 > \alpha =3 \ \  \rightarrow$ **We Reject** $H_0$ with the significance level of $0.03$.
+
+Based on the p-value, we can conclude that the mean life expectancy of the High BMI" group group is significantly greater then the mean life expectancy of the "Low BMI" group.
+
+**The End**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE }
+# **`r round(qt(0.975,87),2)`**
 #3.d
-
 alpah = 0.03
-p.value = 2.798601e-16
+p.value = 1.849632e-13
 ```
-p-value that is less than our significance level, then we can conclude that the null hypothesis is rejected
+<!-- p-value that is less than our significance level, then we can conclude that the null hypothesis is rejected. -->
